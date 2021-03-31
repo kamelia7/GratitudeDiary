@@ -74,9 +74,9 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Gratitude> createGratitudeList() {
         List<Gratitude> localList = new ArrayList<>();
-        localList.add(new Gratitude("Я благодарна за небо над головой и солнышко"));
-        localList.add(new Gratitude("Я благодарна..."));
-        localList.add(new Gratitude("Я благодарна..."));
+        localList.add(new Gratitude("Благодарю за небо над головой и солнышко"));
+        localList.add(new Gratitude("Благодарю за..."));
+        localList.add(new Gratitude("Благодарю за..."));
         return localList;
     }
 }
