@@ -8,6 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import static com.myapp.gratitudediary.MainActivity.EXTRA_RECORD_TEXT;
+import static com.myapp.gratitudediary.MainActivity.EXTRA_TEXT_TO_EDIT;
+
 public class AddingGratitudeActivity extends AppCompatActivity {
 
     EditText etInput;
@@ -21,45 +24,23 @@ public class AddingGratitudeActivity extends AppCompatActivity {
         etInput = findViewById(R.id.etInput);
         btnSaveRecord = findViewById(R.id.btnSaveRecord);
 
-        etInput.requestFocus(); //чтобы курсор сразу был на строке ввода
-        //etInput.setSelection(0);
+        etInput.requestFocus();
 
-        //если открыли на редактирование
-        //Получаем интент, который вызвал это активити
-        Intent intent = getIntent();
-        if (intent.hasExtra("text_to_edit")) {
-            String text = intent.getStringExtra("text_to_edit");
-            etInput.setText(text);
+        Intent intent = getIntent(); //Получаем интент, который вызвал это активити
+        if (intent.hasExtra(EXTRA_TEXT_TO_EDIT)) { //Если активити открыли для редактирования записи
+            String text = intent.getStringExtra(EXTRA_TEXT_TO_EDIT);
+            etInput.setText(text + " ");
+            //устанавливаем курсор в конец текста
+            etInput.setSelection(etInput.getText().length());
         }
 
         btnSaveRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // если будем получать в этом интенте текст для редактирования
-                // получаем Intent, который вызывал это Activity
-                //Intent intent = getIntent();
-
-                //Данные передаются и возвращаются в РАЗНЫХ интентах.
-                //У каждого активити свой интент!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-                //нужно это
                 Intent intent = new Intent();
-                if (v.getId() == R.id.btnSaveRecord) { //TODO возможно потом тут будет switch
-                    intent.putExtra("record_text", etInput.getText().toString());
-                    setResult(RESULT_OK, intent);
-                    finish();
-                }
-
-                //Обратите внимание, мы никак не адресуем этот Intent.
-                // Т.е. ни класс, ни action мы не указываем.
-                // И получается, что непонятно куда пойдет этот Intent.
-                // Но метод setResult знает, куда надо вернуть Intent - в «родительское» Activity,
-                // которое выполнило вызов метода startActivityForResult.
-                // Также в setResult мы передаем константу RESULT_OK,
-                // означающую успешное завершение вызова.
-                // И именно она передастся в параметр resultCode метода onActivityResult в MainActivity.java.
-                // Далее методом finish мы завершаем работу AddingGratitudeActivity,
-                // чтобы результат ушел в MainActivity.
+                intent.putExtra(EXTRA_RECORD_TEXT, etInput.getText().toString());
+                setResult(RESULT_OK, intent);
+                finish(); //завершаем работу AddingGratitudeActivity, чтобы результат ушел в MainActivity
             }
         });
     }

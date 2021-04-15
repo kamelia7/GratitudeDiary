@@ -1,7 +1,5 @@
 package com.myapp.gratitudediary;
 
-import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +18,20 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
         this.data = data;
     }
 
+    // Создаем свой интерфейс для обработки нажатия,
+    // поскольку хотим реализовать обработку нажатия в классе MainActivity, исходя из того кода,
+    // который там имеется (или из какого-либо другого класса по необходимости)
+    public interface OnGratitudeClickListener {
+        void onGratitudeClick(Gratitude gratitude, int position);
+    }
+
+    //поле не final, т.к. делаем сеттер, а не задаем значение в конструкторе
+    private OnGratitudeClickListener onGratitudeClickListener;
+
+    public void setOnGratitudeClickListener(OnGratitudeClickListener onGratitudeClickListener) {
+        this.onGratitudeClickListener = onGratitudeClickListener;
+    }
+
     @NonNull
     @Override
     public GratitudeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -30,8 +42,8 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
 
     @Override
     public void onBindViewHolder(@NonNull GratitudeViewHolder holder, int position) {
-        //holder.setRecordText(); //было. вар 1
-        holder.setRecordText(position);
+        Gratitude gratitude = data.get(position);
+        holder.setGratitude(gratitude);
     }
 
     @Override
@@ -39,11 +51,7 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
         return data.size();
     }
 
-    //interface ShowUndoMessageListener {
-    //    void onMessageShowed(Context context);
-    //}
-
-
+    //класс холдера не static для возможности использования в нем нестатичного поля onGratitudeClickListener
     class GratitudeViewHolder extends RecyclerView.ViewHolder {
 
         TextView tvText;
@@ -53,26 +61,21 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
 
             tvText = itemView.findViewById(R.id.tvText);
 
-            tvText.setOnLongClickListener(new View.OnLongClickListener() {
+            itemView.setOnClickListener(new View.OnClickListener() { //вешаем лисенер не на tvText, а на itemView
                 @Override
-                public boolean onLongClick(View v) {
-                    // TODO сделать это с лисенером, чтобы не тащить в адаптер MainActivity
-                    //Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
-                    //intent.putExtra("text_to_edit", tvText.getText().toString());
-                    //startActivity(intent); //startActivityForResult?
-
-                    //String text = tvText.getText().toString();
-                    return false; //надо true?
+                public void onClick(View v) {
+                    //создан onGratitudeClickListener, чтобы не тащить в адаптер MainActivity,
+                    // а только из класса активити можем вызвать другое активити
+                    if (onGratitudeClickListener != null) {
+                        int position = GratitudeViewHolder.this.getAdapterPosition();
+                        onGratitudeClickListener.onGratitudeClick(data.get(position), position);
+                    }
                 }
             });
         }
 
-        //или лучше public?
-        private void setRecordText(int position) {
-            //int position = getAdapterPosition();  //вар 1
-            Gratitude gratitude = data.get(position);
+        private void setGratitude(Gratitude gratitude) {
             tvText.setText(gratitude.getText());
         }
     }
-
 }

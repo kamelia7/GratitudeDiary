@@ -23,29 +23,36 @@ public class MainActivity extends AppCompatActivity {
     final GratitudeAdapter gratitudeAdapter = new GratitudeAdapter(gratitudes);
     FloatingActionButton fabAddRecord;
 
-    // onActivityResult вызывается, когда закрывается AddingGratitudeActivity,
-    // тем самым давая нам знать, что закрылось Activity,
-    // которое мы вызывали методом startActivityForResult.
+    static final int ADD_GRATITUDE_REQUEST = 0;
+    static final int EDIT_GRATITUDE_REQUEST = 1;
 
-    //В MainActivity за прием результатов с вызванных Activity отвечает метод onActivityResult.
-    // В нем мы распаковали Intent и .??...............................
+    private int editedGratitudePos;
 
-    //requestCode – тот же идентификатор, что и в startActivityForResult.
-    // По нему определяем, с какого Activity пришел результат.
-    //resultCode – код возврата. Определяет, успешно прошел вызов или нет.
-    //data – Intent, в котором возвращаются данные
+    public static final String EXTRA_RECORD_TEXT = "record_text";
+    public static final String EXTRA_TEXT_TO_EDIT = "text_to_edit";
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data); //должен быть вызван
+        if (data == null) return; //data будет null, если передать resultCode, а интент не передать
 
-        if (data == null) {
-            return;
-        } //todo задействовать request и resultcode
-        String recordText = data.getStringExtra("record_text");
-        gratitudes.add(new Gratitude(recordText));
-        gratitudeAdapter.notifyDataSetChanged();//TODO это переделать. сделать лисенер для связи адаптера и UI
-        //gratitudeAdapter.notifyItemInserted();
+        if (resultCode == RESULT_OK && data.hasExtra(EXTRA_RECORD_TEXT)) {
+            String recordText = data.getStringExtra(EXTRA_RECORD_TEXT);
+            switch (requestCode) {
+                case ADD_GRATITUDE_REQUEST:
+                    gratitudes.add(0, new Gratitude(recordText)); //TODO сделать запись в БДшку по id записи, id добавить в Gratitude
+                    gratitudeAdapter.notifyItemInserted(0); //так появляется анимация
+                    break;
 
+                case EDIT_GRATITUDE_REQUEST:
+                    gratitudes.set(editedGratitudePos, new Gratitude(recordText));
+                    gratitudeAdapter.notifyItemChanged(editedGratitudePos);
+                    break;
+
+                default:
+                    break;
+            }
+        }
     }
 
     @Override
@@ -53,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Делаем так, чтобы было видно, что поле меняется именно тут. А не где-то во внутренних фун-х
-        gratitudes.addAll(createGratitudeList());
+        //Делаем так, чтобы было видно, что поле меняется именно тут. А не где-то во внутренних функциях
+        gratitudes.addAll(createGratitudeList()); //позже тут будем читать данные из БД
 
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -67,7 +74,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
-                startActivityForResult(intent, 1);
+                startActivityForResult(intent, ADD_GRATITUDE_REQUEST);
+            }
+        });
+
+        gratitudeAdapter.setOnGratitudeClickListener(new GratitudeAdapter.OnGratitudeClickListener() {
+            @Override
+            public void onGratitudeClick(Gratitude gratitude, int position) {
+
+                Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
+                intent.putExtra(EXTRA_TEXT_TO_EDIT, gratitude.getText());
+                editedGratitudePos = position;
+                startActivityForResult(intent, EDIT_GRATITUDE_REQUEST);
             }
         });
     }

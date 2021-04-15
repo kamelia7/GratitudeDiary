@@ -14,7 +14,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="10dp"
-        tools:text="Еще одна благодарность" />
+        tools:text="Еще одна благодарность">
+        <requestFocus/>
+    </EditText>
 
     <Button
         android:id="@+id/btnSaveRecord"
