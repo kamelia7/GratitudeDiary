@@ -2,14 +2,20 @@ package com.myapp.gratitudediary;
 
 //класс для элементов списка RecyclerView
 public class Gratitude {
-    //позже сюда будет добавлено ещё id для БДшки
-    private final String text;
 
-    public Gratitude(String text) {
+    private final String text;
+    private final long id; //для работы с БД
+
+    public Gratitude(long id, String text) {
+        this.id = id;
         this.text = text;
     }
 
     public String getText() {
         return text;
+    }
+
+    public long getId() {
+        return id;
     }
 }

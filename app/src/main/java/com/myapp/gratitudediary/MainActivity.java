@@ -23,10 +23,13 @@ public class MainActivity extends AppCompatActivity {
     final GratitudeAdapter gratitudeAdapter = new GratitudeAdapter(gratitudes);
     FloatingActionButton fabAddRecord;
 
+    private DB db;
+
     static final int ADD_GRATITUDE_REQUEST = 0;
     static final int EDIT_GRATITUDE_REQUEST = 1;
 
     private int editedGratitudePos;
+    private long editedGratitudeId;
 
     public static final String EXTRA_RECORD_TEXT = "record_text";
     public static final String EXTRA_TEXT_TO_EDIT = "text_to_edit";
@@ -39,13 +42,18 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK && data.hasExtra(EXTRA_RECORD_TEXT)) {
             String recordText = data.getStringExtra(EXTRA_RECORD_TEXT);
             switch (requestCode) {
+
                 case ADD_GRATITUDE_REQUEST:
-                    gratitudes.add(0, new Gratitude(recordText)); //TODO сделать запись в БДшку по id записи, id добавить в Gratitude
+                    //новые записи добавляются в базу данных в обычном порядке на последнюю позицию,
+                    //а в RecyclerView вставляются на 0ю позицию (недавние записи будут вверху списка)
+                    long recordId = db.addRecord(recordText);
+                    gratitudes.add(0, new Gratitude(recordId, recordText));
                     gratitudeAdapter.notifyItemInserted(0); //так появляется анимация
                     break;
 
                 case EDIT_GRATITUDE_REQUEST:
-                    gratitudes.set(editedGratitudePos, new Gratitude(recordText));
+                    db.updateRecord(editedGratitudeId, recordText);
+                    gratitudes.set(editedGratitudePos, new Gratitude(editedGratitudeId, recordText));
                     gratitudeAdapter.notifyItemChanged(editedGratitudePos);
                     break;
 
@@ -59,9 +67,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //Делаем так, чтобы было видно, что поле меняется именно тут. А не где-то во внутренних функциях
-        gratitudes.addAll(createGratitudeList()); //позже тут будем читать данные из БД
 
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -85,16 +90,45 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
                 intent.putExtra(EXTRA_TEXT_TO_EDIT, gratitude.getText());
                 editedGratitudePos = position;
+                editedGratitudeId = gratitude.getId();
                 startActivityForResult(intent, EDIT_GRATITUDE_REQUEST);
             }
         });
+
+        //Открываем подключение к БД (или создаем БД, если она не создана, и подключаемся к ней)
+        db = new DB(this);
+        db.open();
+
+        readGratitudesFromDBInReverseOrder(); //при 1м запуске (когда БД еще пустая) ничего не вернется
+
+        if (gratitudes.isEmpty()) { //из БД ничего не прочли, она пустая - 1й запуск
+            for (Gratitude gratitude : createGratitudeList()) //заполняем БД сторонними данными, а не из листа gratitudes
+                db.addRecord(gratitude.getText());
+            readGratitudesFromDBInReverseOrder(); //читаем данные из только что заполенной БД в лист gratitudes
+        }
     }
 
     private List<Gratitude> createGratitudeList() {
         List<Gratitude> localList = new ArrayList<>();
-        localList.add(new Gratitude("Благодарю за небо над головой и солнышко"));
-        localList.add(new Gratitude("Благодарю за..."));
-        localList.add(new Gratitude("Благодарю за..."));
+        localList.add(new Gratitude(1, "Благодарю за..."));
+        localList.add(new Gratitude(2, "Благодарю за..."));
+        localList.add(new Gratitude(3,"Благодарю за небо над головой и солнышко"));
         return localList;
+    }
+
+    private void readGratitudesFromDB() {
+        gratitudes.addAll(db.getAllGratitudes()); //не меняем ссылку на лист, чтобы не баговал связанный с ним адаптер
+        gratitudeAdapter.notifyDataSetChanged();
+        // Чтобы прочитать и вывести на экран данные из БД, их надо занести в лист, связанный с адаптером.
+        // И затем перерисовать все эл-ты списка RecyclerView.
+        //(На этом моменте записи из БД преобразуются в объекты типа Gratitude)
+    }
+
+    private void readGratitudesFromDBInReverseOrder() {
+        List<Gratitude> list = new ArrayList<>();
+        //читаем данные из БД в обычном порядке, затем реверсим этот список и выводим его на экран (недавние записи будут вверху списка)
+        list.addAll(db.getAllGratitudes());
+        gratitudes.addAll(Utils.getReverseList(list));
+        gratitudeAdapter.notifyDataSetChanged();
     }
 }
