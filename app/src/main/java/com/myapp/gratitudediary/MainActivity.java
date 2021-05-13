@@ -2,7 +2,9 @@ package com.myapp.gratitudediary;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -12,6 +14,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,14 +25,18 @@ public class MainActivity extends AppCompatActivity {
     List<Gratitude> gratitudes = new ArrayList<>();
     final GratitudeAdapter gratitudeAdapter = new GratitudeAdapter(gratitudes);
     FloatingActionButton fabAddRecord;
+    CoordinatorLayout clContainer;
 
     private DB db;
 
     static final int ADD_GRATITUDE_REQUEST = 0;
     static final int EDIT_GRATITUDE_REQUEST = 1;
 
-    private int editedGratitudePos;
+    private int editedGratitudePosition;
     private long editedGratitudeId;
+
+    private Gratitude recentlyDeletedGratitude;
+    private int recentlyDeletedGratitudePosition;
 
     public static final String EXTRA_RECORD_TEXT = "record_text";
     public static final String EXTRA_TEXT_TO_EDIT = "text_to_edit";
@@ -53,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
 
                 case EDIT_GRATITUDE_REQUEST:
                     db.updateRecord(editedGratitudeId, recordText);
-                    gratitudes.set(editedGratitudePos, new Gratitude(editedGratitudeId, recordText));
-                    gratitudeAdapter.notifyItemChanged(editedGratitudePos);
+                    gratitudes.set(editedGratitudePosition, new Gratitude(editedGratitudeId, recordText));
+                    gratitudeAdapter.notifyItemChanged(editedGratitudePosition);
                     break;
 
                 default:
@@ -68,10 +75,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        clContainer = findViewById(R.id.clContainer);
+
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
         recyclerView.setAdapter(gratitudeAdapter);
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(new SwipeToDeleteCallback.OnGratitudeDeleteListener() {
+            @Override
+            public void onGratitudeDelete(int position) {
+                recentlyDeletedGratitudePosition = position;         //сохраним позицию только что удаленного эл-та
+                recentlyDeletedGratitude = gratitudes.get(position); //сохраним удаленный элемент в переменной-члене класса
+                db.deleteRecord(recentlyDeletedGratitude.getId());   //удаляем эл-т из бд
+                gratitudes.remove(position);                         //удаляем эл-т из списка
+                gratitudeAdapter.notifyItemRemoved(position);        //обновляем адаптер
+                showUndoSnackbar();                                  //показать снекбар отмены удаления
+            }
+        }));
+
+        itemTouchHelper.attachToRecyclerView(recyclerView);
 
         fabAddRecord = findViewById(R.id.fabAddRecord);
 
@@ -89,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
                 intent.putExtra(EXTRA_TEXT_TO_EDIT, gratitude.getText());
-                editedGratitudePos = position;
+                editedGratitudePosition = position;
                 editedGratitudeId = gratitude.getId();
                 startActivityForResult(intent, EDIT_GRATITUDE_REQUEST);
             }
@@ -130,5 +153,23 @@ public class MainActivity extends AppCompatActivity {
         list.addAll(db.getAllGratitudes());
         gratitudes.addAll(Utils.getReverseList(list));
         gratitudeAdapter.notifyDataSetChanged();
+    }
+
+    private void showUndoSnackbar() {
+        Snackbar.make(clContainer, R.string.snackbar_text, Snackbar.LENGTH_LONG)
+                .setAction(R.string.snackbar_action, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        undoDelete();
+                    }
+                })
+        .show();
+    }
+
+    private void undoDelete() {
+        //возвращаем запись не в конец бд с новым id, а с прошлым id на старое место (бд автоматически сортирует записи по возрастанию id)
+        db.addRecord(recentlyDeletedGratitude.getText(), recentlyDeletedGratitude.getId());
+        gratitudes.add(recentlyDeletedGratitudePosition, recentlyDeletedGratitude);
+        gratitudeAdapter.notifyItemInserted(recentlyDeletedGratitudePosition);
     }
 }

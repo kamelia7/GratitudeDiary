@@ -114,6 +114,15 @@ public class DB {
         return recordId;
     }
 
+    //Добавить запись с заданным id в GRATITUDE_TABLE (используется для восстановления ранее удаленной из бд записи)
+    public long addRecord(String text, long id) {
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_TEXT, text);
+        cv.put(COLUMN_ID, id);
+        long recordId = db.insert(GRATITUDE_TABLE, null, cv);
+        return recordId;
+    }
+
     //Обновить запись в GRATITUDE_TABLE по id
     public void updateRecord(long id, String newText) {
         ContentValues cv = new ContentValues();

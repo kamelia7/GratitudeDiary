@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">GratitudeDiary</string>
+    <string name="snackbar_text">Удалено</string>
+    <string name="snackbar_action">Отмена</string>
 </resources>
