@@ -18,6 +18,8 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Gratitude recentlyDeletedGratitude;
     private int recentlyDeletedGratitudePosition;
+
+    Timer timer;
+    TimerTask timerTask;
+    private static final int SNACKBAR_LENGTH_LONG = 2750; //Snackbar's duration LENGTH_LONG is 2750 millis
 
     public static final String EXTRA_RECORD_TEXT = "record_text";
     public static final String EXTRA_TEXT_TO_EDIT = "text_to_edit";
@@ -87,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
             public void onGratitudeDelete(int position) {
                 recentlyDeletedGratitudePosition = position;         //сохраним позицию только что удаленного эл-та
                 recentlyDeletedGratitude = gratitudes.get(position); //сохраним удаленный элемент в переменной-члене класса
-                db.deleteRecord(recentlyDeletedGratitude.getId());   //удаляем эл-т из бд
                 gratitudes.remove(position);                         //удаляем эл-т из списка
                 gratitudeAdapter.notifyItemRemoved(position);        //обновляем адаптер
                 showUndoSnackbar();                                  //показать снекбар отмены удаления
@@ -161,15 +166,35 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         undoDelete();
+                        //останавливаем таймер, удаления записи из БД не будет, TimerTask не выполнится
+                        timer.cancel(); //Terminates this timer, discarding any currently scheduled tasks
+                        timer.purge();  //Removes all cancelled tasks from this timer's task queue. сбросит таймер до конца
                     }
                 })
         .show();
+        startTimer(); //запускаем таймер с началом показа снекбара
     }
 
     private void undoDelete() {
-        //возвращаем запись не в конец бд с новым id, а с прошлым id на старое место (бд автоматически сортирует записи по возрастанию id)
-        db.addRecord(recentlyDeletedGratitude.getText(), recentlyDeletedGratitude.getId());
         gratitudes.add(recentlyDeletedGratitudePosition, recentlyDeletedGratitude);
         gratitudeAdapter.notifyItemInserted(recentlyDeletedGratitudePosition);
+    }
+
+    void startTimer() {
+        timer = new Timer();
+        //инициализируем работу TimerTask
+        initializeTimerTask();
+        //Удаление записи из БД по истечении времени показа снекбара (когда пользователь точно не отменил удаление)
+        //schedule the timer: after the first 2750ms the TimerTask will run once
+        timer.schedule(timerTask, SNACKBAR_LENGTH_LONG);
+    }
+
+    void initializeTimerTask() {
+        timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                db.deleteRecord(recentlyDeletedGratitude.getId());
+            }
+        };
     }
 }
