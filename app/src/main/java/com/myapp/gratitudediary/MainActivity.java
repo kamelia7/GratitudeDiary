@@ -17,6 +17,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int editedGratitudePosition;
     private long editedGratitudeId;
+    private long editedGratitudeCreationDate;
 
     private Gratitude recentlyDeletedGratitude;
     private int recentlyDeletedGratitudePosition;
@@ -59,14 +61,18 @@ public class MainActivity extends AppCompatActivity {
                 case ADD_GRATITUDE_REQUEST:
                     //новые записи добавляются в базу данных в обычном порядке на последнюю позицию,
                     //а в RecyclerView вставляются на 0ю позицию (недавние записи будут вверху списка)
-                    long recordId = db.addRecord(recordText);
-                    gratitudes.add(0, new Gratitude(recordId, recordText));
+                    long creationDate = new Date().getTime(); //ms
+                    long recordId = db.addRecord(recordText, creationDate);
+                    gratitudes.add(0, new Gratitude(recordId, recordText, creationDate));
                     gratitudeAdapter.notifyItemInserted(0); //так появляется анимация
                     break;
 
                 case EDIT_GRATITUDE_REQUEST:
-                    db.updateRecord(editedGratitudeId, recordText);
-                    gratitudes.set(editedGratitudePosition, new Gratitude(editedGratitudeId, recordText));
+                    long editionDate = new Date().getTime();
+                    db.updateRecord(editedGratitudeId, recordText, editionDate);
+                    Gratitude gratitude = new Gratitude(editedGratitudeId, recordText, editedGratitudeCreationDate);
+                    gratitude.setEditionDate(editionDate);
+                    gratitudes.set(editedGratitudePosition, gratitude);
                     gratitudeAdapter.notifyItemChanged(editedGratitudePosition);
                     break;
 
@@ -119,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(EXTRA_TEXT_TO_EDIT, gratitude.getText());
                 editedGratitudePosition = position;
                 editedGratitudeId = gratitude.getId();
+                editedGratitudeCreationDate = gratitude.getCreationDate();
                 startActivityForResult(intent, EDIT_GRATITUDE_REQUEST);
             }
         });
@@ -131,16 +138,17 @@ public class MainActivity extends AppCompatActivity {
 
         if (gratitudes.isEmpty()) { //из БД ничего не прочли, она пустая - 1й запуск
             for (Gratitude gratitude : createGratitudeList()) //заполняем БД сторонними данными, а не из листа gratitudes
-                db.addRecord(gratitude.getText());
+                db.addRecord(gratitude.getText(), gratitude.getCreationDate());
             readGratitudesFromDBInReverseOrder(); //читаем данные из только что заполенной БД в лист gratitudes
         }
     }
 
     private List<Gratitude> createGratitudeList() {
         List<Gratitude> localList = new ArrayList<>();
-        localList.add(new Gratitude(1, "Благодарю за..."));
-        localList.add(new Gratitude(2, "Благодарю за..."));
-        localList.add(new Gratitude(3,"Благодарю за небо над головой и солнышко"));
+        long creationDate = new Date().getTime();
+        localList.add(new Gratitude(1, "Благодарю за...", creationDate));
+        localList.add(new Gratitude(2, "Благодарю за...", creationDate));
+        localList.add(new Gratitude(3,"Благодарю за небо над головой и солнышко", creationDate));
         return localList;
     }
 
