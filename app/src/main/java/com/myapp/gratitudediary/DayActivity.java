@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity {
+public class DayActivity extends AppCompatActivity {
 
     RecyclerView recyclerView;
     List<Gratitude> gratitudes = new ArrayList<>();
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         fabAddRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
+                Intent intent = new Intent(DayActivity.this, GratitudeActivity.class);
                 startActivityForResult(intent, ADD_GRATITUDE_REQUEST);
             }
         });
@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onGratitudeClick(Gratitude gratitude, int position) {
 
-                Intent intent = new Intent(MainActivity.this, AddingGratitudeActivity.class);
+                Intent intent = new Intent(DayActivity.this, GratitudeActivity.class);
                 intent.putExtra(EXTRA_TEXT_TO_EDIT, gratitude.getText());
                 editedGratitudePosition = position;
                 editedGratitudeId = gratitude.getId();

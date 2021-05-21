@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.RecyclerView;
 public class SwipeToDeleteCallback extends ItemTouchHelper.SimpleCallback {
 
     //Создаем свой интерфейс для обработки удаления,
-    //поскольку хотим реализовать обработку удаления извне (в классе MainActivity), исходя из того кода,
-    //который там имеется (нам нужна бд, которая создана в MainActivity, чтобы удалить из нее эл-т)
+    //поскольку хотим реализовать обработку удаления извне (в классе DayActivity), исходя из того кода,
+    //который там имеется (нам нужна бд, которая создана в DayActivity, чтобы удалить из нее эл-т)
     public interface OnGratitudeDeleteListener {
         void onGratitudeDelete(int position);
     }

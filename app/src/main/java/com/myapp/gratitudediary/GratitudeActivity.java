@@ -8,10 +8,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import static com.myapp.gratitudediary.MainActivity.EXTRA_RECORD_TEXT;
-import static com.myapp.gratitudediary.MainActivity.EXTRA_TEXT_TO_EDIT;
+import static com.myapp.gratitudediary.DayActivity.EXTRA_RECORD_TEXT;
+import static com.myapp.gratitudediary.DayActivity.EXTRA_TEXT_TO_EDIT;
 
-public class AddingGratitudeActivity extends AppCompatActivity {
+public class GratitudeActivity extends AppCompatActivity {
 
     EditText etInput;
     Button btnSaveRecord;
@@ -40,7 +40,7 @@ public class AddingGratitudeActivity extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.putExtra(EXTRA_RECORD_TEXT, etInput.getText().toString());
                 setResult(RESULT_OK, intent);
-                finish(); //завершаем работу AddingGratitudeActivity, чтобы результат ушел в MainActivity
+                finish(); //завершаем работу GratitudeActivity, чтобы результат ушел в DayActivity
             }
         });
     }

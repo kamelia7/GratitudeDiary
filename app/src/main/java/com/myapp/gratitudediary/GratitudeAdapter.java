@@ -19,7 +19,7 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
     }
 
     // Создаем свой интерфейс для обработки нажатия,
-    // поскольку хотим реализовать обработку нажатия в классе MainActivity, исходя из того кода,
+    // поскольку хотим реализовать обработку нажатия в классе DayActivity, исходя из того кода,
     // который там имеется (или из какого-либо другого класса по необходимости)
     public interface OnGratitudeClickListener {
         void onGratitudeClick(Gratitude gratitude, int position);
@@ -64,7 +64,7 @@ public class GratitudeAdapter extends RecyclerView.Adapter<GratitudeAdapter.Grat
             itemView.setOnClickListener(new View.OnClickListener() { //вешаем лисенер не на tvText, а на itemView
                 @Override
                 public void onClick(View v) {
-                    //создан onGratitudeClickListener, чтобы не тащить в адаптер MainActivity,
+                    //создан onGratitudeClickListener, чтобы не тащить в адаптер DayActivity,
                     // а только из класса активити можем вызвать другое активити
                     if (onGratitudeClickListener != null) {
                         int position = GratitudeViewHolder.this.getAdapterPosition();
