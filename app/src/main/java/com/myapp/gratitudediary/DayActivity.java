@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -24,11 +25,12 @@ import java.util.TimerTask;
 
 public class DayActivity extends AppCompatActivity {
 
-    RecyclerView recyclerView;
+    RecyclerView rvGratitudes;
     List<Gratitude> gratitudes = new ArrayList<>();
     final GratitudeAdapter gratitudeAdapter = new GratitudeAdapter(gratitudes);
     FloatingActionButton fabAddRecord;
-    CoordinatorLayout clContainer;
+    CoordinatorLayout clGratitudesContainer;
+    Button btnCalendar;
 
     private DB db;
 
@@ -62,14 +64,14 @@ public class DayActivity extends AppCompatActivity {
                     //новые записи добавляются в базу данных в обычном порядке на последнюю позицию,
                     //а в RecyclerView вставляются на 0ю позицию (недавние записи будут вверху списка)
                     long creationDate = new Date().getTime(); //ms
-                    long recordId = db.addRecord(recordText, creationDate);
+                    long recordId = db.addGratitudeRecord(recordText, creationDate);
                     gratitudes.add(0, new Gratitude(recordId, recordText, creationDate));
                     gratitudeAdapter.notifyItemInserted(0); //так появляется анимация
                     break;
 
                 case EDIT_GRATITUDE_REQUEST:
                     long editionDate = new Date().getTime();
-                    db.updateRecord(editedGratitudeId, recordText, editionDate);
+                    db.updateGratitudeRecord(editedGratitudeId, recordText, editionDate);
                     Gratitude gratitude = new Gratitude(editedGratitudeId, recordText, editedGratitudeCreationDate);
                     gratitude.setEditionDate(editionDate);
                     gratitudes.set(editedGratitudePosition, gratitude);
@@ -85,14 +87,14 @@ public class DayActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_day);
 
-        clContainer = findViewById(R.id.clContainer);
+        clGratitudesContainer = findViewById(R.id.clGratitudesContainer);
 
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
-        recyclerView.setAdapter(gratitudeAdapter);
+        rvGratitudes = findViewById(R.id.rvGratitudes);
+        rvGratitudes.setLayoutManager(new LinearLayoutManager(this));
+        rvGratitudes.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
+        rvGratitudes.setAdapter(gratitudeAdapter);
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new SwipeToDeleteCallback(new SwipeToDeleteCallback.OnGratitudeDeleteListener() {
             @Override
@@ -105,7 +107,7 @@ public class DayActivity extends AppCompatActivity {
             }
         }));
 
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+        itemTouchHelper.attachToRecyclerView(rvGratitudes);
 
         fabAddRecord = findViewById(R.id.fabAddRecord);
 
@@ -130,6 +132,14 @@ public class DayActivity extends AppCompatActivity {
             }
         });
 
+        btnCalendar = findViewById(R.id.btnCalendar);
+        btnCalendar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(DayActivity.this, CalendarActivity.class));
+            }
+        });
+        
         //Открываем подключение к БД (или создаем БД, если она не создана, и подключаемся к ней)
         db = new DB(this);
         db.open();
@@ -138,7 +148,7 @@ public class DayActivity extends AppCompatActivity {
 
         if (gratitudes.isEmpty()) { //из БД ничего не прочли, она пустая - 1й запуск
             for (Gratitude gratitude : createGratitudeList()) //заполняем БД сторонними данными, а не из листа gratitudes
-                db.addRecord(gratitude.getText(), gratitude.getCreationDate());
+                db.addGratitudeRecord(gratitude.getText(), gratitude.getCreationDate());
             readGratitudesFromDBInReverseOrder(); //читаем данные из только что заполенной БД в лист gratitudes
         }
     }
@@ -169,7 +179,7 @@ public class DayActivity extends AppCompatActivity {
     }
 
     private void showUndoSnackbar() {
-        Snackbar.make(clContainer, R.string.snackbar_text, Snackbar.LENGTH_LONG)
+        Snackbar.make(clGratitudesContainer, R.string.snackbar_text, Snackbar.LENGTH_LONG)
                 .setAction(R.string.snackbar_action, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -201,8 +211,14 @@ public class DayActivity extends AppCompatActivity {
         timerTask = new TimerTask() {
             @Override
             public void run() {
-                db.deleteRecord(recentlyDeletedGratitude.getId());
+                db.deleteGratitudeRecord(recentlyDeletedGratitude.getId());
             }
         };
+    }
+
+    @Override
+    protected void onDestroy() {
+        db.close();
+        super.onDestroy();
     }
 }

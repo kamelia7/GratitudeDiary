@@ -19,16 +19,16 @@ public class DB {
 
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_TEXT = "text";
-    public static final String COLUMN_DATE_TIME_OF_RECORD_CREATION = "date_time_of_record_creation";
-    public static final String COLUMN_DATE_TIME_OF_RECORD_LAST_EDITION = "date_time_of_record_last_edition";
+    public static final String COLUMN_DATE_MILLIS_OF_RECORD_CREATION = "date_millis_of_record_creation";
+    public static final String COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION = "date_millis_of_record_last_edition";
 
     //integer из sqlite имеет диапазон long
     private static final String DB_CREATE =
             "create table " + GRATITUDE_TABLE + "(" +
                     COLUMN_ID + " integer primary key autoincrement, " +
                     COLUMN_TEXT + " text, " +
-                    COLUMN_DATE_TIME_OF_RECORD_CREATION + " integer, " +
-                    COLUMN_DATE_TIME_OF_RECORD_LAST_EDITION + " integer" + //в ms. В SQLite integer включает long. Подбирает размер автоматически
+                    COLUMN_DATE_MILLIS_OF_RECORD_CREATION + " integer, " +
+                    COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION + " integer" + //в ms. В SQLite integer включает long. Подбирает размер автоматически
                     ");";
 
     final String LOG_TAG = "myLogs";
@@ -54,8 +54,20 @@ public class DB {
     }
 
     //Получить все записи из GRATITUDE_TABLE в виде Cursor
-    public Cursor getAllRecords() {
+    public Cursor getAllGratitudesRecords() {
         return db.query(GRATITUDE_TABLE, null, null, null, null, null, null);
+    }
+
+    //Получить даты создания записей (в мс) за указанный период времени из GRATITUDE_TABLE в виде Cursor
+    //нижняя граница включается, верхняя - не включается
+    public Cursor getGratitudesRecordsDatesForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
+
+        String sqlQuery = "SELECT " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION
+                + " FROM " + GRATITUDE_TABLE
+                + " WHERE " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION + " >= " + includedLowerLimit
+                + " AND " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION + " < " + excludedUpperLimit;
+
+        return db.rawQuery(sqlQuery, null);
     }
 
     //Получить все записи в прямом порядке из GRATITUDE_TABLE в виде List<Gratitude>
@@ -63,26 +75,26 @@ public class DB {
     //так как лучше требовать от функций одного поведения - принцип единой ответственности)
     public List<Gratitude> getAllGratitudes() {
         List<Gratitude> gratitudes = new ArrayList<>();
-        Cursor cursor = getAllRecords();
+        Cursor cursor = getAllGratitudesRecords();
         if (cursor.moveToFirst()) { //перемещаемся на 1й эл-т. if обязателен - у нас может не быть данных
             int idColumnIndex = cursor.getColumnIndex(COLUMN_ID);
             int textColumnIndex = cursor.getColumnIndex(COLUMN_TEXT);
-            int dateTimeOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_TIME_OF_RECORD_CREATION);
-            int dateTimeOfRecordLastEditionColumnIndex = cursor.getColumnIndex(COLUMN_DATE_TIME_OF_RECORD_LAST_EDITION);
+            int dateMillisOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_CREATION);
+            int dateMillisOfRecordLastEditionColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION);
             do {
                 long gratitudeId = cursor.getLong(idColumnIndex);
                 String gratitudeText = cursor.getString(textColumnIndex);
-                long dateTimeOfGratitudeCreation = cursor.getLong(dateTimeOfRecordCreationColumnIndex);
-                Gratitude gratitude = new Gratitude(gratitudeId, gratitudeText, dateTimeOfGratitudeCreation);
-                long editionDate = cursor.getLong(dateTimeOfRecordLastEditionColumnIndex); //если в бд лежит null, то cursor.getLong вернет 0
-                if (!cursor.isNull(dateTimeOfRecordLastEditionColumnIndex)) //дата редактирования в бд может быть null, если запись еще не редактировалась
+                long dateMillisOfGratitudeCreation = cursor.getLong(dateMillisOfRecordCreationColumnIndex);
+                Gratitude gratitude = new Gratitude(gratitudeId, gratitudeText, dateMillisOfGratitudeCreation);
+                long editionDate = cursor.getLong(dateMillisOfRecordLastEditionColumnIndex); //если в бд лежит null, то cursor.getLong вернет 0
+                if (!cursor.isNull(dateMillisOfRecordLastEditionColumnIndex)) //дата редактирования в бд может быть null, если запись еще не редактировалась
                     gratitude.setEditionDate(editionDate);
                 gratitudes.add(gratitude);
                 Log.d(LOG_TAG,
                         "ID = " + gratitudeId
                                 + ", text = " + gratitudeText
-                                + ", date_time_of_record_creation = " + dateTimeOfGratitudeCreation
-                                + ", date_time_of_record_last_edition = " + editionDate);
+                                + ", date_millis_of_record_creation = " + dateMillisOfGratitudeCreation
+                                + ", date_millis_of_record_last_edition = " + editionDate);
             } while (cursor.moveToNext()); //если есть еще записи
         }
         cursor.close();
@@ -92,19 +104,19 @@ public class DB {
     //Получить все записи в обратном порядке из GRATITUDE_TABLE в виде List<Gratitude>
     public List<Gratitude> getAllGratitudesInReverseOrder() {
         List<Gratitude> gratitudes = new ArrayList<>();
-        Cursor cursor = getAllRecords();
+        Cursor cursor = getAllGratitudesRecords();
         if (cursor.moveToLast()) { //перемещаемся на последний эл-т
             int idColumnIndex = cursor.getColumnIndex(COLUMN_ID);
             int textColumnIndex = cursor.getColumnIndex(COLUMN_TEXT);
-            int dateTimeOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_TIME_OF_RECORD_CREATION);
-            int dateTimeOfRecordLastEditionColumnIndex = cursor.getColumnIndex(COLUMN_DATE_TIME_OF_RECORD_LAST_EDITION);
+            int dateMillisOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_CREATION);
+            int dateMillisOfRecordLastEditionColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION);
             do {
                 long gratitudeId = cursor.getLong(idColumnIndex);
                 String gratitudeText = cursor.getString(textColumnIndex);
-                long dateTimeOfGratitudeCreation = cursor.getLong(dateTimeOfRecordCreationColumnIndex);
-                Gratitude gratitude = new Gratitude(gratitudeId, gratitudeText, dateTimeOfGratitudeCreation);
-                long editionDate = cursor.getLong(dateTimeOfRecordLastEditionColumnIndex);
-                if (!cursor.isNull(dateTimeOfRecordLastEditionColumnIndex))
+                long dateMillisOfGratitudeCreation = cursor.getLong(dateMillisOfRecordCreationColumnIndex);
+                Gratitude gratitude = new Gratitude(gratitudeId, gratitudeText, dateMillisOfGratitudeCreation);
+                long editionDate = cursor.getLong(dateMillisOfRecordLastEditionColumnIndex);
+                if (!cursor.isNull(dateMillisOfRecordLastEditionColumnIndex))
                     gratitude.setEditionDate(editionDate);
                 gratitudes.add(gratitude);
             } while (cursor.moveToPrevious());
@@ -113,30 +125,52 @@ public class DB {
         return gratitudes;
     }
 
+    //Получить даты создания записей (в мс) за указанный период времени из GRATITUDE_TABLE в виде List<Long>
+    //нижняя граница включается, верхняя - не включается
+    public List<Long> getGratitudesDatesForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
+        List<Long> dates = new ArrayList<>();
+        Cursor cursor = getGratitudesRecordsDatesForTimePeriod(includedLowerLimit, excludedUpperLimit);
+        Log.d(LOG_TAG, "getGratitudesDatesForTimePeriod: includedLowerLimit = "
+                + includedLowerLimit + " excludedUpperLimit = " + excludedUpperLimit);
+        int i = 0;
+        if (cursor.moveToFirst()) {
+            int dateMillisOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_CREATION);
+            do {
+                long date = cursor.getLong(dateMillisOfRecordCreationColumnIndex);
+                dates.add(date);
+                i++;
+                Log.d(LOG_TAG, "date_millis_of_record_creation = " + date);
+                Log.d(LOG_TAG, "i = " + i); //быстрофикс для выведения всех записей в лог. иначе 1я запись в лог почему-то не попадает, хотя на экран выводится
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return dates;
+    }
+
     //Добавить запись в GRATITUDE_TABLE
-    public long addRecord(String text, long creationDate) { //не Date, так как в БД хранится в integer, который включает long
+    public long addGratitudeRecord(String text, long creationDate) { //не Date, так как в БД хранится в integer, который включает long
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_TEXT, text);
-        cv.put(COLUMN_DATE_TIME_OF_RECORD_CREATION, creationDate);
+        cv.put(COLUMN_DATE_MILLIS_OF_RECORD_CREATION, creationDate);
         long recordId = db.insert(GRATITUDE_TABLE, null, cv);
         return recordId;
     }
 
     //Добавить запись с заданным id в GRATITUDE_TABLE (используется для восстановления ранее удаленной из бд записи)
-    public long addRecord(String text, long creationDate, long id) {
+    public long addGratitudeRecord(String text, long creationDate, long id) {
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_TEXT, text);
-        cv.put(COLUMN_DATE_TIME_OF_RECORD_CREATION, creationDate);
+        cv.put(COLUMN_DATE_MILLIS_OF_RECORD_CREATION, creationDate);
         cv.put(COLUMN_ID, id);
         long recordId = db.insert(GRATITUDE_TABLE, null, cv);
         return recordId;
     }
 
     //Обновить запись в GRATITUDE_TABLE по id
-    public void updateRecord(long id, String newText, long editionDate) { //дата создания не меняется
+    public void updateGratitudeRecord(long id, String newText, long editionDate) { //дата создания не меняется
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_TEXT, newText);
-        cv.put(COLUMN_DATE_TIME_OF_RECORD_LAST_EDITION, editionDate);
+        cv.put(COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION, editionDate);
         db.update(GRATITUDE_TABLE, cv, COLUMN_ID + " = " + id, null); //update возвращает int updRecordsCount
         //обновлять можем по какому-либо полю таблицы
         //то есть, либо по id,
@@ -148,12 +182,12 @@ public class DB {
     }
 
     //Удалить запись из GRATITUDE_TABLE по id
-    public void deleteRecord(long id) {
+    public void deleteGratitudeRecord(long id) {
         db.delete(GRATITUDE_TABLE, COLUMN_ID + " = ?", new String[] { String.valueOf(id) });
     }
 
     //Удалить все записи из GRATITUDE_TABLE
-    public void deleteAllRecords() {
+    public void deleteAllGratitudesRecords() {
         db.delete(GRATITUDE_TABLE, null, null); //delete возвращает int delRecordsCount
     }
 

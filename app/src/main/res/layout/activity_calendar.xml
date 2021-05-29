@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@layout/background"
+    tools:context=".CalendarActivity">
+
+    <Button
+        android:id="@+id/btnInfo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:drawable/ic_menu_help"
+        android:foreground="?android:attr/selectableItemBackground"
+        app:layout_constraintBottom_toTopOf="@+id/clDatesContainer"
+        app:layout_constraintStart_toStartOf="@id/clDatesContainer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.1" />
+
+    <Button
+        android:id="@+id/btnSettings"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:drawable/ic_menu_manage"
+        android:foreground="?android:attr/selectableItemBackground"
+        app:layout_constraintBottom_toTopOf="@+id/clDatesContainer"
+        app:layout_constraintEnd_toEndOf="@+id/clDatesContainer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.1" />
+
+    <TextView
+        android:id="@+id/tvYear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:text="2021"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/ivPreviousYearArrow"
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:rotation="90"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/arrow_down_float"
+        app:layout_constraintBottom_toBottomOf="@id/tvYear"
+        app:layout_constraintEnd_toStartOf="@+id/tvYear"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvYear" />
+
+    <ImageView
+        android:id="@+id/ivNextYearArrow"
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:background="@android:drawable/arrow_up_float"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:rotation="90"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@id/tvYear"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toEndOf="@+id/tvYear"
+        app:layout_constraintTop_toTopOf="@id/tvYear" />
+
+    <TextView
+        android:id="@+id/tvMonth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:text="Май"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvYear" />
+
+    <ImageView
+        android:id="@+id/ivPreviousMonthArrow"
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:rotation="90"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/arrow_down_float"
+        app:layout_constraintBottom_toBottomOf="@id/tvMonth"
+        app:layout_constraintEnd_toStartOf="@+id/tvMonth"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvMonth" />
+
+    <ImageView
+        android:id="@+id/ivNextMonthArrow"
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:background="@android:drawable/arrow_up_float"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:rotation="90"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@id/tvMonth"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toEndOf="@+id/tvMonth"
+        app:layout_constraintTop_toTopOf="@id/tvMonth" />
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/clDatesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvMonth">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvDates"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"/>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

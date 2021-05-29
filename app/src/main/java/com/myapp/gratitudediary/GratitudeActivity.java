@@ -19,7 +19,7 @@ public class GratitudeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_adding_gratitude);
+        setContentView(R.layout.activity_gratitude);
 
         etInput = findViewById(R.id.etInput);
         btnSaveRecord = findViewById(R.id.btnSaveRecord);
