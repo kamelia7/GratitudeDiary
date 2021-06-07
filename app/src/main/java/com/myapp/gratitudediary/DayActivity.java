@@ -139,9 +139,7 @@ public class DayActivity extends AppCompatActivity {
                 startActivity(new Intent(DayActivity.this, CalendarActivity.class));
             }
         });
-
-        App app = App.getInstance(this);
-
+        
         //Открываем подключение к БД (или создаем БД, если она не создана, и подключаемся к ней)
         db = new DB(this);
         db.open();
