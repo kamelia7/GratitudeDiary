@@ -170,21 +170,15 @@ public class DayActivity extends AppCompatActivity {
                 DatePickerDialog dpd = new DatePickerDialog(DayActivity.this, new DatePickerDialog.OnDateSetListener() {
                     @Override
                     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                        long currentDate = new Date().getTime();
                         c.clear();
                         c.set(year, month, dayOfMonth);
-                        //если в диалоге выбрана дата не больше текущего дня, то выводим на экран выбранную дату
-                        if (c.getTimeInMillis() <= currentDate) {
-                            tvDate.setText(sdfDayAndMonth.format(c.getTime()));
-                            app.setChosenDate(c.getTimeInMillis()); //сохраняем выбранную с помощью диалога дату
-                        }
-                        else { //иначе - выводим текущую дату
-                            tvDate.setText(sdfDayAndMonth.format(currentDate));
-                            app.setChosenDate(currentDate);
-                        }
+                        tvDate.setText(sdfDayAndMonth.format(c.getTime()));
+                        app.setChosenDate(c.getTimeInMillis()); //сохраняем выбранную с помощью диалога дату
+
                         //TODO тут будем читать из БД данные за установленный день
                     }
                 }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                dpd.getDatePicker().setMaxDate(new Date().getTime());
                 dpd.show();
             }
         });
