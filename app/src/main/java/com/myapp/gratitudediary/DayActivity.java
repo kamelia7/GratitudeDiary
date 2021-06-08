@@ -8,18 +8,24 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -31,6 +37,7 @@ public class DayActivity extends AppCompatActivity {
     FloatingActionButton fabAddRecord;
     CoordinatorLayout clGratitudesContainer;
     Button btnCalendar;
+    TextView tvDate;
 
     private DB db;
 
@@ -50,6 +57,8 @@ public class DayActivity extends AppCompatActivity {
 
     public static final String EXTRA_RECORD_TEXT = "record_text";
     public static final String EXTRA_TEXT_TO_EDIT = "text_to_edit";
+
+    SimpleDateFormat sdfDayAndMonth = new SimpleDateFormat("E, dd MMMM", Locale.getDefault()); //dd MMMM yyyy
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -140,7 +149,45 @@ public class DayActivity extends AppCompatActivity {
             }
         });
 
-        App app = App.getInstance(this);
+        final App app = App.getInstance(this);
+
+        tvDate = findViewById(R.id.tvDate);
+
+        if (app.getChosenDate() == 0) //если не устанавливали дату сами, то выводим текущую
+            tvDate.setText(sdfDayAndMonth.format(new Date()));
+        else tvDate.setText(sdfDayAndMonth.format(app.getChosenDate()));
+
+        tvDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                long startDate = app.getChosenDate();
+                final Calendar c = Calendar.getInstance(); //если не устанавливали дату сами ранее, то откроем диалог на текущей дате
+                if (startDate != 0) {
+                    c.clear();
+                    c.setTimeInMillis(startDate);
+                }
+
+                DatePickerDialog dpd = new DatePickerDialog(DayActivity.this, new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        long currentDate = new Date().getTime();
+                        c.clear();
+                        c.set(year, month, dayOfMonth);
+                        //если в диалоге выбрана дата не больше текущего дня, то выводим на экран выбранную дату
+                        if (c.getTimeInMillis() <= currentDate) {
+                            tvDate.setText(sdfDayAndMonth.format(c.getTime()));
+                            app.setChosenDate(c.getTimeInMillis()); //сохраняем выбранную с помощью диалога дату
+                        }
+                        else { //иначе - выводим текущую дату
+                            tvDate.setText(sdfDayAndMonth.format(currentDate));
+                            app.setChosenDate(currentDate);
+                        }
+                        //TODO тут будем читать из БД данные за установленный день
+                    }
+                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                dpd.show();
+            }
+        });
 
         //Открываем подключение к БД (или создаем БД, если она не создана, и подключаемся к ней)
         db = new DB(this);
