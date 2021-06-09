@@ -72,14 +72,14 @@ public class DayActivity extends AppCompatActivity {
                 case ADD_GRATITUDE_REQUEST:
                     //новые записи добавляются в базу данных в обычном порядке на последнюю позицию,
                     //а в RecyclerView вставляются на 0ю позицию (недавние записи будут вверху списка)
-                    long creationDate = new Date().getTime(); //ms
+                    long creationDate = System.currentTimeMillis();
                     long recordId = db.addGratitudeRecord(recordText, creationDate);
                     gratitudes.add(0, new Gratitude(recordId, recordText, creationDate));
                     gratitudeAdapter.notifyItemInserted(0); //так появляется анимация
                     break;
 
                 case EDIT_GRATITUDE_REQUEST:
-                    long editionDate = new Date().getTime();
+                    long editionDate = System.currentTimeMillis();
                     db.updateGratitudeRecord(editedGratitudeId, recordText, editionDate);
                     Gratitude gratitude = new Gratitude(editedGratitudeId, recordText, editedGratitudeCreationDate);
                     gratitude.setEditionDate(editionDate);
@@ -173,12 +173,13 @@ public class DayActivity extends AppCompatActivity {
                         c.clear();
                         c.set(year, month, dayOfMonth);
                         tvDate.setText(sdfDayAndMonth.format(c.getTime()));
-                        app.setChosenDate(c.getTimeInMillis()); //сохраняем выбранную с помощью диалога дату
+                        long chosenDateMillis = c.getTimeInMillis();
+                        app.setChosenDate(chosenDateMillis); //сохраняем выбранную с помощью диалога дату
 
-                        //TODO тут будем читать из БД данные за установленный день
+                        readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis); //читаем благодарности за выбранный день
                     }
                 }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
-                dpd.getDatePicker().setMaxDate(new Date().getTime());
+                dpd.getDatePicker().setMaxDate(System.currentTimeMillis());
                 dpd.show();
             }
         });
@@ -187,6 +188,8 @@ public class DayActivity extends AppCompatActivity {
         db = new DB(this);
         db.open();
 
+        readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(System.currentTimeMillis()); //читаем благодарности за текущий день
+        /*
         readGratitudesFromDBInReverseOrder(); //при 1м запуске (когда БД еще пустая) ничего не вернется
 
         if (gratitudes.isEmpty()) { //из БД ничего не прочли, она пустая - 1й запуск
@@ -194,11 +197,12 @@ public class DayActivity extends AppCompatActivity {
                 db.addGratitudeRecord(gratitude.getText(), gratitude.getCreationDate());
             readGratitudesFromDBInReverseOrder(); //читаем данные из только что заполенной БД в лист gratitudes
         }
+        */
     }
 
     private List<Gratitude> createGratitudeList() {
         List<Gratitude> localList = new ArrayList<>();
-        long creationDate = new Date().getTime();
+        long creationDate = System.currentTimeMillis();
         localList.add(new Gratitude(1, "Благодарю за...", creationDate));
         localList.add(new Gratitude(2, "Благодарю за...", creationDate));
         localList.add(new Gratitude(3,"Благодарю за небо над головой и солнышко", creationDate));
@@ -217,6 +221,29 @@ public class DayActivity extends AppCompatActivity {
         List<Gratitude> list = new ArrayList<>();
         //читаем данные из БД в обычном порядке, затем реверсим этот список и выводим его на экран (недавние записи будут вверху списка)
         list.addAll(db.getAllGratitudes());
+        gratitudes.addAll(Utils.getReverseList(list));
+        gratitudeAdapter.notifyDataSetChanged();
+    }
+
+    //выводит благодарности за указанную дату (за указанный день, месяц и год)
+    private void readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(long dateWithGivenDayAndMonthAndYear) {
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(dateWithGivenDayAndMonthAndYear);
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int dayOfMonth = c.get(Calendar.DAY_OF_MONTH);
+        c.clear();
+
+        //нижняя граница - указанный день указанного месяца указанного года - включаем
+        c.set(year, month, dayOfMonth, 0, 0, 0);
+        long includedLowerLimit = c.getTimeInMillis();
+        //верхняя граница - следующий день указанного месяца указанного года - не включаем
+        c.add(Calendar.DAY_OF_MONTH, 1);
+        long excludedUpperLimit = c.getTimeInMillis();
+
+        gratitudes.clear();
+        List<Gratitude> list = new ArrayList<>();
+        list.addAll(db.getGratitudesForTimePeriod(includedLowerLimit, excludedUpperLimit));
         gratitudes.addAll(Utils.getReverseList(list));
         gratitudeAdapter.notifyDataSetChanged();
     }

@@ -58,12 +58,11 @@ public class DB {
         return db.query(GRATITUDE_TABLE, null, null, null, null, null, null);
     }
 
-    //Получить даты создания записей (в мс) за указанный период времени из GRATITUDE_TABLE в виде Cursor
+    //Получить записи за указанный период времени из GRATITUDE_TABLE в виде Cursor
     //нижняя граница включается, верхняя - не включается
-    public Cursor getGratitudesRecordsDatesForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
+    public Cursor getGratitudesRecordsForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
 
-        String sqlQuery = "SELECT " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION
-                + " FROM " + GRATITUDE_TABLE
+        String sqlQuery = "SELECT * FROM " + GRATITUDE_TABLE
                 + " WHERE " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION + " >= " + includedLowerLimit
                 + " AND " + COLUMN_DATE_MILLIS_OF_RECORD_CREATION + " < " + excludedUpperLimit;
 
@@ -129,7 +128,7 @@ public class DB {
     //нижняя граница включается, верхняя - не включается
     public List<Long> getGratitudesDatesForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
         List<Long> dates = new ArrayList<>();
-        Cursor cursor = getGratitudesRecordsDatesForTimePeriod(includedLowerLimit, excludedUpperLimit);
+        Cursor cursor = getGratitudesRecordsForTimePeriod(includedLowerLimit, excludedUpperLimit);
         Log.d(LOG_TAG, "getGratitudesDatesForTimePeriod: includedLowerLimit = "
                 + includedLowerLimit + " excludedUpperLimit = " + excludedUpperLimit);
         int i = 0;
@@ -145,6 +144,38 @@ public class DB {
         }
         cursor.close();
         return dates;
+    }
+
+    //Получить записи за указанный период времени из GRATITUDE_TABLE в виде List<Gratitude>
+    //нижняя граница включается, верхняя - не включается
+    public List<Gratitude> getGratitudesForTimePeriod(long includedLowerLimit, long excludedUpperLimit) {
+        List<Gratitude> gratitudes = new ArrayList<>();
+        Cursor cursor = getGratitudesRecordsForTimePeriod(includedLowerLimit, excludedUpperLimit);
+        Log.d(LOG_TAG, "getGratitudesForTimePeriod: includedLowerLimit = "
+                + includedLowerLimit + ", excludedUpperLimit = " + excludedUpperLimit);
+        if (cursor.moveToFirst()) { //перемещаемся на 1й эл-т. if обязателен - у нас может не быть данных
+            int idColumnIndex = cursor.getColumnIndex(COLUMN_ID);
+            int textColumnIndex = cursor.getColumnIndex(COLUMN_TEXT);
+            int dateMillisOfRecordCreationColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_CREATION);
+            int dateMillisOfRecordLastEditionColumnIndex = cursor.getColumnIndex(COLUMN_DATE_MILLIS_OF_RECORD_LAST_EDITION);
+            do {
+                long gratitudeId = cursor.getLong(idColumnIndex);
+                String gratitudeText = cursor.getString(textColumnIndex);
+                long dateMillisOfGratitudeCreation = cursor.getLong(dateMillisOfRecordCreationColumnIndex);
+                Gratitude gratitude = new Gratitude(gratitudeId, gratitudeText, dateMillisOfGratitudeCreation);
+                long editionDate = cursor.getLong(dateMillisOfRecordLastEditionColumnIndex); //если в бд лежит null, то cursor.getLong вернет 0
+                if (!cursor.isNull(dateMillisOfRecordLastEditionColumnIndex)) //дата редактирования в бд может быть null, если запись еще не редактировалась
+                    gratitude.setEditionDate(editionDate);
+                gratitudes.add(gratitude);
+                Log.d(LOG_TAG,
+                        "ID = " + gratitudeId
+                                + ", text = " + gratitudeText
+                                + ", date_millis_of_record_creation = " + dateMillisOfGratitudeCreation
+                                + ", date_millis_of_record_last_edition = " + editionDate);
+            } while (cursor.moveToNext()); //если есть еще записи
+        }
+        cursor.close();
+        return gratitudes;
     }
 
     //Добавить запись в GRATITUDE_TABLE

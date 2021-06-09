@@ -77,6 +77,7 @@ public class CalendarActivity extends AppCompatActivity {
             c.set(recordYear, recordMonth, recordDayOfMonth, 0, 0, 0);
             datesSetWithUniqueDayOfMonth.add(c.getTimeInMillis());
         }
+        datesForGivenMonthAndYearWithUniqueDayOfMonth.clear();
         datesForGivenMonthAndYearWithUniqueDayOfMonth.addAll(datesSetWithUniqueDayOfMonth);
         Collections.sort(datesForGivenMonthAndYearWithUniqueDayOfMonth);
         dateAdapter.notifyDataSetChanged();
