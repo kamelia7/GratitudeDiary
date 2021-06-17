@@ -4,14 +4,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 //CalendarActivity отображает карточки в RecyclerView с днями за данный месяц и год,
@@ -27,6 +29,12 @@ public class CalendarActivity extends AppCompatActivity {
     final DateAdapter dateAdapter = new DateAdapter(datesForGivenMonthAndYearWithUniqueDayOfMonth);
     DB db;
 
+    TextView tvYear;
+    TextView tvMonth;
+
+    SimpleDateFormat sdfYear = new SimpleDateFormat("yyyy", Locale.getDefault());
+    SimpleDateFormat sdfMonth = new SimpleDateFormat("LLLL", Locale.getDefault()); //stand-alone month
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,17 +45,52 @@ public class CalendarActivity extends AppCompatActivity {
         rvDates.setLayoutManager(new GridLayoutManager(this, 4));
         rvDates.setAdapter(dateAdapter);
 
+        final App app = App.getInstance(this);
+
         dateAdapter.setOnDateClickListener(new DateAdapter.OnDateClickListener() {
             @Override
             public void onDateClick(long date, int position) {
-                startActivityForResult(new Intent(CalendarActivity.this, DayActivity.class), 0);
+                app.setChosenDate(date); //сохраняем выбранную дату
+                finish();
+                //вообще не запускаем DayActivity,
+                //таким образом не будет кучи DayActivity, которые по очереди будут открываться
+                //при нажатии Back на DayActivity.
+                //Сохраняем выбранную дату и закрываем CalendarActivity (она уничтожится).
+                //После чего вызовется onRestart (onRestart -> onStart -> onResume)
+                //для DayActivity, потому что она не была уничтожена (не вызывалось finish()),
+                //а находилась в состоянии Stopped, пока было открыто CalendarActivity.
             }
         });
+
+        tvYear = findViewById(R.id.tvYear);
+        tvMonth = findViewById(R.id.tvMonth);
 
         db = new DB(this);
         db.open();
 
-        readGratitudesDatesForGivenMonthAndYearFromDB(System.currentTimeMillis()); //TODO сюда будет приходить дата из пикера в мс
+        //Вывод года и месяца в tvYear и tvMonth: выводим год и месяц ранее выбранной пользоваталем даты
+        //(лежит в поле класса App), иначе выводим год и месяц текущей даты
+        //(дата может быть выбрана через диалог/стрелки на DayActivity или через CalendarActivity;
+        //выбор через CalendarActivity учитывается, так как могли нажать на карточку с датой
+        //на CalendarActivity (в этот момент выбранная дата сохранилась в App),
+        //перейти на DayActivity и потом нажать на btnCalendar,
+        //по клику на которую происходит открытие CalendarActivity).
+        //Вывод уникальных дней дат благодарностей за месяц и год,
+        //соответствующие выбранной пользователем дате;
+        //если дата не была ранее выбрана, то выводим уникальные дни дат благодарностей
+        //за год и месяц текущей даты (т.е. за текущий месяц)
+        long chosenDateMillis = app.getChosenDate();
+        if (chosenDateMillis != 0) {
+            tvYear.setText(sdfYear.format(chosenDateMillis));
+            tvMonth.setText(sdfMonth.format(chosenDateMillis));
+            readGratitudesDatesForGivenMonthAndYearFromDB(chosenDateMillis);
+        }
+        else {
+            long currentTimeMillis = System.currentTimeMillis();
+            tvYear.setText(sdfYear.format(currentTimeMillis));
+            tvMonth.setText(sdfMonth.format(currentTimeMillis));
+            readGratitudesDatesForGivenMonthAndYearFromDB(currentTimeMillis);
+        }
     }
 
     //выводит уникальные дни дат благодарностей, отобранных за данный месяц и год

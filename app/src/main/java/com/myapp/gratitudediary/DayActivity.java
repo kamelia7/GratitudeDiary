@@ -23,7 +23,6 @@ import com.google.android.material.snackbar.Snackbar;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -146,6 +145,10 @@ public class DayActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(DayActivity.this, CalendarActivity.class));
+                //Открываем CalendarActivity из DayActivity, НЕ уничтожаем DayActivity (нет finish()),
+                //чтобы если не выберем карточку с датой на CalendarActivity и нажмем Back,
+                //то мы попадали на DayActivity с последней выбранной датой
+                //(если дату не выбирали, то откроется на текущей дате)
             }
         });
 
@@ -183,14 +186,6 @@ public class DayActivity extends AppCompatActivity {
         db = new DB(this);
         db.open();
 
-        //Вывод даты в tvDate: выводим ранее выбранную пользоваталем дату (лежит в поле класса App),
-        //иначе - текущую
-        //(дата может быть выбрана через диалог/стрелки на DayActivity или через CalendarActivity;
-        //выбор через CalendarActivity учитывается, т.к. могли выбрать карточку с датой на CalendarActivity
-        //(в этот момент выбранная дата сохранилась в App), перейти на DayActivity и нажать Back).
-        //Вывод записей за выбранную пользователем дату;
-        //если дата не была ранее выбрана, то выводим записи за текущий день
-
         //Здесь в onCreate (до выбора даты пользоваталем)
         //нельзя просто всегда выводить текущую дату и записи за нее,
         //так как при нажатии Back на DayActivity эта активити уничтожится,
@@ -198,16 +193,7 @@ public class DayActivity extends AppCompatActivity {
         //а Application будет продолжать существовать нек. время, потом система его уничтожит),
         //а при восстановлении приложения из памяти и, соответственно, вызове onCreate для DayActivity, нужно,
         //чтобы на DayActivity была открыта последняя установленная дата и записи за нее, а не текущая дата
-        long chosenDateMillis = app.getChosenDate();
-        if (chosenDateMillis != 0) {
-            tvDate.setText(sdfDayAndMonth.format(chosenDateMillis));
-            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis);
-        }
-        else {
-            long currentTimeMillis = System.currentTimeMillis();
-            tvDate.setText(sdfDayAndMonth.format(currentTimeMillis));
-            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(currentTimeMillis);
-        }
+        displayDateFromAppOrCurrentDateAndGratitudesForDate();
 
         /*
         readGratitudesFromDBInReverseOrder(); //при 1м запуске (когда БД еще пустая) ничего не вернется
@@ -218,6 +204,33 @@ public class DayActivity extends AppCompatActivity {
             readGratitudesFromDBInReverseOrder(); //читаем данные из только что заполенной БД в лист gratitudes
         }
         */
+    }
+
+    //Вывод даты в tvDate: выводим ранее выбранную пользоваталем дату (лежит в поле класса App),
+    //иначе - текущую
+    //(дата может быть выбрана через диалог/стрелки на DayActivity или через CalendarActivity;
+    //выбор через CalendarActivity учитывается, т.к. могли выбрать карточку с датой на CalendarActivity
+    //(в этот момент выбранная дата сохранилась в App), перейти на DayActivity и нажать Back).
+    //Вывод записей за выбранную пользователем дату;
+    //если дата не была ранее выбрана, то выводим записи за текущий день
+    private void displayDateFromAppOrCurrentDateAndGratitudesForDate() {
+        App app = App.getInstance(this);
+        long chosenDateMillis = app.getChosenDate();
+        if (chosenDateMillis != 0) {
+            tvDate.setText(sdfDayAndMonth.format(chosenDateMillis));
+            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis);
+        }
+        else {
+            long currentTimeMillis = System.currentTimeMillis();
+            tvDate.setText(sdfDayAndMonth.format(currentTimeMillis));
+            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(currentTimeMillis);
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        displayDateFromAppOrCurrentDateAndGratitudesForDate();
     }
 
     private List<Gratitude> createGratitudeList() {
