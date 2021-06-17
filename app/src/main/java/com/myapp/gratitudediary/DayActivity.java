@@ -152,11 +152,6 @@ public class DayActivity extends AppCompatActivity {
         final App app = App.getInstance(this);
 
         tvDate = findViewById(R.id.tvDate);
-
-        if (app.getChosenDate() == 0) //если не устанавливали дату сами, то выводим текущую
-            tvDate.setText(sdfDayAndMonth.format(new Date()));
-        else tvDate.setText(sdfDayAndMonth.format(app.getChosenDate()));
-
         tvDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -188,7 +183,32 @@ public class DayActivity extends AppCompatActivity {
         db = new DB(this);
         db.open();
 
-        readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(System.currentTimeMillis()); //читаем благодарности за текущий день
+        //Вывод даты в tvDate: выводим ранее выбранную пользоваталем дату (лежит в поле класса App),
+        //иначе - текущую
+        //(дата может быть выбрана через диалог/стрелки на DayActivity или через CalendarActivity;
+        //выбор через CalendarActivity учитывается, т.к. могли выбрать карточку с датой на CalendarActivity
+        //(в этот момент выбранная дата сохранилась в App), перейти на DayActivity и нажать Back).
+        //Вывод записей за выбранную пользователем дату;
+        //если дата не была ранее выбрана, то выводим записи за текущий день
+
+        //Здесь в onCreate (до выбора даты пользоваталем)
+        //нельзя просто всегда выводить текущую дату и записи за нее,
+        //так как при нажатии Back на DayActivity эта активити уничтожится,
+        //и приложение будет просто лежать в памяти (оно не закроется, не уйдет в фон,
+        //а Application будет продолжать существовать нек. время, потом система его уничтожит),
+        //а при восстановлении приложения из памяти и, соответственно, вызове onCreate для DayActivity, нужно,
+        //чтобы на DayActivity была открыта последняя установленная дата и записи за нее, а не текущая дата
+        long chosenDateMillis = app.getChosenDate();
+        if (chosenDateMillis != 0) {
+            tvDate.setText(sdfDayAndMonth.format(chosenDateMillis));
+            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis);
+        }
+        else {
+            long currentTimeMillis = System.currentTimeMillis();
+            tvDate.setText(sdfDayAndMonth.format(currentTimeMillis));
+            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(currentTimeMillis);
+        }
+
         /*
         readGratitudesFromDBInReverseOrder(); //при 1м запуске (когда БД еще пустая) ничего не вернется
 
