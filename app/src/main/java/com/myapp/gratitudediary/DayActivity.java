@@ -36,6 +36,7 @@ public class DayActivity extends AppCompatActivity {
     FloatingActionButton fabAddRecord;
     CoordinatorLayout clGratitudesContainer;
     Button btnCalendar;
+    Button btnCurrentDay;
     TextView tvDate;
 
     private DB db;
@@ -170,15 +171,23 @@ public class DayActivity extends AppCompatActivity {
                     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                         c.clear();
                         c.set(year, month, dayOfMonth);
-                        tvDate.setText(sdfDayAndMonth.format(c.getTime()));
                         long chosenDateMillis = c.getTimeInMillis();
                         app.setChosenDate(chosenDateMillis); //сохраняем выбранную с помощью диалога дату
-
-                        readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis); //читаем благодарности за выбранный день
+                        displayDateAndGratitudesForDate(chosenDateMillis); //выводим выбранную дату и читаем благодарности за выбранный день
                     }
                 }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
                 dpd.getDatePicker().setMaxDate(System.currentTimeMillis());
                 dpd.show();
+            }
+        });
+
+        btnCurrentDay = findViewById(R.id.btnCurrentDay);
+        btnCurrentDay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                long currentTimeMillis = System.currentTimeMillis();
+                app.setChosenDate(currentTimeMillis); //сохраняем текущую дату, так как выбрали ее целенаправленно кнопкой
+                displayDateAndGratitudesForDate(currentTimeMillis);
             }
         });
 
@@ -216,15 +225,14 @@ public class DayActivity extends AppCompatActivity {
     private void displayDateFromAppOrCurrentDateAndGratitudesForDate() {
         App app = App.getInstance(this);
         long chosenDateMillis = app.getChosenDate();
-        if (chosenDateMillis != 0) {
-            tvDate.setText(sdfDayAndMonth.format(chosenDateMillis));
-            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(chosenDateMillis);
-        }
-        else {
-            long currentTimeMillis = System.currentTimeMillis();
-            tvDate.setText(sdfDayAndMonth.format(currentTimeMillis));
-            readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(currentTimeMillis);
-        }
+        if (chosenDateMillis != 0)
+            displayDateAndGratitudesForDate(chosenDateMillis);
+        else displayDateAndGratitudesForDate(System.currentTimeMillis());
+    }
+
+    private void displayDateAndGratitudesForDate(long dateMillis) {
+        tvDate.setText(sdfDayAndMonth.format(dateMillis));
+        readGratitudesForGivenDayAndMonthAndYearFromDBInReverseOrder(dateMillis);
     }
 
     @Override
